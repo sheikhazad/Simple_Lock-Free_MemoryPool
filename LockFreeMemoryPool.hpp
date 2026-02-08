@@ -17,7 +17,7 @@ constexpr std::size_t CACHE_LINE = 64;
  * - Thread-local cache for ultra-fast allocation.
  * - No dynamic fallback: allocation returns nullptr when pool is exhausted.
  */
-template<typename T, std::size_t pool_size>
+template<typename T, std::size_t poolSize>
 class LockFreeMemoryPool {
     // Node stored inside the free list
     struct FreeNode { FreeNode* next; };
@@ -32,11 +32,11 @@ class LockFreeMemoryPool {
     //static data members belong to the class, not the object (unlike non-static)
     //A thread‑local cache must not belong to a specific pool instance.
     //It must belong to the thread, independent of how many pool objects exist.
-    static thread_local FreeNode* localCache;
+    static thread_local FreeNode* _localCache;
 
     // Total bytes required for N objects
     static constexpr std::size_t total_bytes() noexcept {
-        return pool_size * sizeof(T);
+        return poolSize * sizeof(T);
     }
 
 public:
@@ -63,7 +63,7 @@ public:
 
         // Build the initial free list (simple singly-linked list)
         FreeNode* head = nullptr;
-        for (std::size_t i = 0; i < pool_size; ++i) {
+        for (std::size_t i = 0; i < poolSize; ++i) {
             auto* node = reinterpret_cast<FreeNode*>(buffer + i * sizeof(T));
             node->next = head;
             head = node;
@@ -85,9 +85,9 @@ public:
      */
     T* allocate() noexcept {
         // Fast path: thread-local cache (no atomics)
-        if (localCache) {
-            FreeNode* n = localCache;
-            localCache = n->next;
+        if (_localCache) {
+            FreeNode* n = _localCache;
+            _localCache = n->next;
             return reinterpret_cast<T*>(n);
         }
 
@@ -118,12 +118,12 @@ public:
         auto* node = reinterpret_cast<FreeNode*>(ptr);
 
         // Push into thread-local cache (fast path)
-        node->next = localCache;
-        localCache = node;
+        node->next = _localCache;
+        _localCache = node;
     }
 };
 
 // Definition of thread-local cache pointer
-template<typename T, std::size_t pool_size>
-thread_local typename LockFreeMemoryPool<T, pool_size>::FreeNode*
-    LockFreeMemoryPool<T, pool_size>::localCache = nullptr;
+template<typename T, std::size_t poolSize>
+thread_local typename LockFreeMemoryPool<T, poolSize>::FreeNode*
+    LockFreeMemoryPool<T, poolSize>::_localCache {nullptr};
