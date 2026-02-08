@@ -42,6 +42,17 @@ public:
     LockFreeMemoryPool() {
         // aligned_alloc requires size to be a multiple of alignment
         std::size_t size = total_bytes();
+
+        /*Example:
+        size = 240
+        CACHE_LINE = 64
+        size % CACHE_LINE = 240 % 64 = 48
+        size += 64 - 48
+        size += 16
+        size = 256
+        256 % 64 = 0
+        So 256 is a valid size for aligned_alloc(64, 256)
+        */
         if (size % CACHE_LINE != 0)
             size += CACHE_LINE - (size % CACHE_LINE);
 
