@@ -12,7 +12,6 @@ and deallocating fixed‑size objects. The design focuses on:
 - lock‑free concurrency
 - cache‑line‑aware layout
 - minimal API surface
-- clarity suitable for interview settings
 
 The pool preallocates storage for N objects of type T and manages them through a
 lock‑free free list combined with a thread‑local fast path.
@@ -88,7 +87,6 @@ dynamic allocation and keeps behavior predictable.
 - no locks
 - no fragmentation
 - predictable memory footprint
-- simple enough for interview demonstration
 - realistic enough for performance‑critical systems
 - cache‑friendly layout
 
@@ -98,7 +96,7 @@ dynamic allocation and keeps behavior predictable.
 - fixed capacity (no resizing)
 - no automatic object construction or destruction
 - no variable‑sized allocations
-- no ABA protection (acceptable for interview‑level demonstration)
+- no ABA protection
 
 These limitations keep the implementation compact and easy to explain.
 
@@ -113,7 +111,7 @@ This memory pool demonstrates:
 - manual memory management
 - allocator‑style design
 
-The implementation is concise, technically correct, and ideal for interview
+The implementation is concise, technically correct.
 scenarios where clarity and reasoning matter more than production‑grade
 complexity.
 
