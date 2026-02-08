@@ -29,6 +29,9 @@ class LockFreeMemoryPool {
     alignas(CACHE_LINE) std::atomic<FreeNode*> freeList;
 
     // Per-thread fast-path cache (no atomics needed)
+    //static data members belong to the class, not the object (unlike non-static)
+    //A thread‑local cache must not belong to a specific pool instance.
+    //It must belong to the thread, independent of how many pool objects exist.
     static thread_local FreeNode* localCache;
 
     // Total bytes required for N objects
