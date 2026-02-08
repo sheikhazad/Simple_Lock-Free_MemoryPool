@@ -73,6 +73,7 @@ public:
     }
 
     ~LockFreeMemoryPool() {
+        //Cant use delte[] as malloc/calloc/aligned_alloc needs free()
         std::free(buffer);
     }
 
