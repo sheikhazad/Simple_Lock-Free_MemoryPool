@@ -6,7 +6,6 @@
 #include <new>       // placement new
 #include <cstdlib>   // std::aligned_alloc, std::free
 
-//It's not property of the class LockFreeMemoryPool but hardware propety, so keep it global
 constexpr std::size_t CACHE_LINE = 64;
 
 /**
@@ -18,7 +17,7 @@ constexpr std::size_t CACHE_LINE = 64;
  * - Thread-local cache for ultra-fast allocation.
  * - No dynamic fallback: allocation returns nullptr when pool is exhausted.
  */
-template<typename T, std::size_t N>
+template<typename T, std::size_t pool_size>
 class LockFreeMemoryPool {
     // Node stored inside the free list
     struct FreeNode { FreeNode* next; };
@@ -37,7 +36,7 @@ class LockFreeMemoryPool {
 
     // Total bytes required for N objects
     static constexpr std::size_t total_bytes() noexcept {
-        return N * sizeof(T);
+        return pool_size * sizeof(T);
     }
 
 public:
@@ -64,7 +63,7 @@ public:
 
         // Build the initial free list (simple singly-linked list)
         FreeNode* head = nullptr;
-        for (std::size_t i = 0; i < N; ++i) {
+        for (std::size_t i = 0; i < pool_size; ++i) {
             auto* node = reinterpret_cast<FreeNode*>(buffer + i * sizeof(T));
             node->next = head;
             head = node;
@@ -125,6 +124,6 @@ public:
 };
 
 // Definition of thread-local cache pointer
-template<typename T, std::size_t N>
-thread_local typename LockFreeMemoryPool<T, N>::FreeNode*
-    LockFreeMemoryPool<T, N>::localCache = nullptr;
+template<typename T, std::size_t pool_size>
+thread_local typename LockFreeMemoryPool<T, pool_size>::FreeNode*
+    LockFreeMemoryPool<T, pool_size>::localCache = nullptr;
