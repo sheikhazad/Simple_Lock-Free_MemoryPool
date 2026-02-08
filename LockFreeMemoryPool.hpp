@@ -16,8 +16,6 @@ constexpr std::size_t CACHE_LINE = 64;
  * - Lock-free global free list (CAS).
  * - Thread-local cache for ultra-fast allocation.
  * - No dynamic fallback: allocation returns nullptr when pool is exhausted.
- *
- * This is the minimal, interview-ready version.
  */
 template<typename T, std::size_t N>
 class LockFreeMemoryPool {
