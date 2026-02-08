@@ -6,6 +6,7 @@
 #include <new>       // placement new
 #include <cstdlib>   // std::aligned_alloc, std::free
 
+//It's not property of the class LockFreeMemoryPool but hardware propety, so keep it global
 constexpr std::size_t CACHE_LINE = 64;
 
 /**
