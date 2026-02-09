@@ -28,6 +28,7 @@ int main() {
     Order* o3 = pool.allocate();
     Order* o4 = pool.allocate();
 
+    //Placement new
     // Construct objects in-place
     new (o1) Order(1, 100.5, 10);
     new (o2) Order(2, 101.0, 20);
