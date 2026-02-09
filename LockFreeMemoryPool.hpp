@@ -79,6 +79,8 @@ public:
 
     LockFreeMemoryPool(const LockFreeMemoryPool&) = delete;
     LockFreeMemoryPool& operator=(const LockFreeMemoryPool&) = delete;
+    LockFreeMemoryPool(LockFreeMemoryPool&&) = delete;
+    LockFreeMemoryPool& operator=(LockFreeMemoryPool&&) = delete;
 
     /**
      * Allocate raw storage for one T.
