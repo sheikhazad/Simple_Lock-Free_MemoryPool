@@ -46,6 +46,8 @@ int main() {
     }
 
     // Destroy and deallocate
+    //Need to call o1->~Order() to destroy manually as o1 was created manually, otherwise internal resource leak. 
+    //pool.deallocate(o1) does not call Order's destructor
     o1->~Order(); pool.deallocate(o1);
     o2->~Order(); pool.deallocate(o2);
 
