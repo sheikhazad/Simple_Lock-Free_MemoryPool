@@ -118,11 +118,11 @@ public:
      * Returned objects go into the thread-local cache first.
      */
     void deallocate(T* ptr) noexcept {
-        auto* node = reinterpret_cast<FreeNode*>(ptr);
+        auto* new_node = reinterpret_cast<FreeNode*>(ptr);
 
         // Push into thread-local cache (fast path)
-        node->next = _localCache;
-        _localCache = node;
+        new_node->next = _localCache;
+        _localCache = new_node;
     }
 };
 
