@@ -64,9 +64,9 @@ public:
         // Build the initial free list (simple singly-linked list)
         FreeNode* head = nullptr;
         for (std::size_t i = 0; i < poolSize; ++i) {
-            auto* node = reinterpret_cast<FreeNode*>(buffer + i * sizeof(T));
-            node->next = head;
-            head = node;
+            auto* new_node = reinterpret_cast<FreeNode*>(buffer + i * sizeof(T));
+            new_node->next = head;
+            head = new_node;
         }
 
         freeList.store(head, std::memory_order_release);
