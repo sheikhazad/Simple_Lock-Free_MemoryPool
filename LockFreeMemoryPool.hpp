@@ -19,7 +19,15 @@ constexpr std::size_t CACHE_LINE = 64;
  */
 template<typename T, std::size_t poolSize>
 class LockFreeMemoryPool {
-    // Node stored inside the free list
+    
+    //1. No need for alignas():
+    // - FreeNode contains only a pointer, so default alignment (alignof(FreeNode)) is sufficient
+    // - Nodes are not concurrently accessed in a way that would cause false sharing
+    // - Cache-line alignment would increase memory footprint without benefit here
+    //2. Also `next` does not need to be atomic:
+    // - It is written by a single thread before the node is published to the free list
+    // - After publication, it is only read (never modified) by other threads
+    // - Synchronization is provided by atomic operations on `freeList` (CAS with acquire/release)
     struct FreeNode { FreeNode* next; };
 
     // Raw contiguous storage for N objects
