@@ -48,6 +48,12 @@ class LockFreeMemoryPool {
     }
 
 public:
+    
+    LockFreeMemoryPool(const LockFreeMemoryPool&) = delete;
+    LockFreeMemoryPool& operator=(const LockFreeMemoryPool&) = delete;
+    LockFreeMemoryPool(LockFreeMemoryPool&&) = delete;
+    LockFreeMemoryPool& operator=(LockFreeMemoryPool&&) = delete;
+
     LockFreeMemoryPool() {
         // aligned_alloc requires size to be a multiple of alignment
         std::size_t size = total_bytes();
@@ -84,11 +90,6 @@ public:
         //Cant use delte[] as malloc/calloc/aligned_alloc needs free()
         std::free(_buffer);
     }
-
-    LockFreeMemoryPool(const LockFreeMemoryPool&) = delete;
-    LockFreeMemoryPool& operator=(const LockFreeMemoryPool&) = delete;
-    LockFreeMemoryPool(LockFreeMemoryPool&&) = delete;
-    LockFreeMemoryPool& operator=(LockFreeMemoryPool&&) = delete;
 
     /**
      * Allocate raw storage for one T.
