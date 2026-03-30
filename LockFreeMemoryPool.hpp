@@ -27,14 +27,14 @@ class LockFreeMemoryPool {
     //2. Also `next` does not need to be atomic:
     // - It is written by a single thread before the node is published to the free list
     // - After publication, it is only read (never modified) by other threads
-    // - Synchronization is provided by atomic operations on `freeList` (CAS with acquire/release)
+    // - Synchronization is provided by atomic operations on `_freeList` (CAS with acquire/release)
     struct FreeNode { FreeNode* next; };
 
     // Raw contiguous storage for N objects
     std::byte* buffer;
 
     // Global lock-free free list head (aligned to avoid false sharing)
-    alignas(CACHE_LINE) std::atomic<FreeNode*> freeList;
+    alignas(CACHE_LINE) std::atomic<FreeNode*> _freeList;
 
     // Per-thread fast-path cache (no atomics needed)
     //static data members belong to the class, not the object (unlike non-static)
@@ -77,7 +77,7 @@ public:
             head = new_node;
         }
 
-        freeList.store(head, std::memory_order_release);
+        _freeList.store(head, std::memory_order_release);
     }
 
     ~LockFreeMemoryPool() {
@@ -103,12 +103,12 @@ public:
         }
 
         // Slow path: global lock-free free list
-        FreeNode* head = freeList.load(std::memory_order_acquire);
+        FreeNode* head = _freeList.load(std::memory_order_acquire);
         while (head) {
             FreeNode* next = head->next;
 
             // Attempt to pop the head using CAS
-            if (freeList.compare_exchange_weak(
+            if (_freeList.compare_exchange_weak(
                     head, next,
                     std::memory_order_acq_rel,//not memory_order_release because I shud also get what's released by deallocate()(in real scenario)
                     std::memory_order_acquire)) {
