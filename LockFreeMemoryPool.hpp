@@ -31,7 +31,7 @@ class LockFreeMemoryPool {
     struct FreeNode { FreeNode* next; };
 
     // Raw contiguous storage for N objects
-    std::byte* buffer;
+    std::byte* _buffer;
 
     // Global lock-free free list head (aligned to avoid false sharing)
     alignas(CACHE_LINE) std::atomic<FreeNode*> _freeList;
@@ -66,13 +66,13 @@ public:
             size += CACHE_LINE - (size % CACHE_LINE);
 
         // Allocate cache-line-aligned storage
-        buffer = static_cast<std::byte*>(std::aligned_alloc(CACHE_LINE, size));
-        if (!buffer) throw std::bad_alloc{};
+        _buffer = static_cast<std::byte*>(std::aligned_alloc(CACHE_LINE, size));
+        if (!_buffer) throw std::bad_alloc{};
 
         // Build the initial free list (simple singly-linked list)
         FreeNode* head = nullptr;
         for (std::size_t i = 0; i < poolSize; ++i) {
-            auto* new_node = reinterpret_cast<FreeNode*>(buffer + i * sizeof(T));
+            auto* new_node = reinterpret_cast<FreeNode*>(_buffer + i * sizeof(T));
             new_node->next = head;
             head = new_node;
         }
@@ -82,7 +82,7 @@ public:
 
     ~LockFreeMemoryPool() {
         //Cant use delte[] as malloc/calloc/aligned_alloc needs free()
-        std::free(buffer);
+        std::free(_buffer);
     }
 
     LockFreeMemoryPool(const LockFreeMemoryPool&) = delete;
