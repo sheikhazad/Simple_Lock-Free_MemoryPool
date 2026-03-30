@@ -40,7 +40,7 @@ class LockFreeMemoryPool {
     //static data members belong to the class, not the object (unlike non-static)
     //A thread‑local cache must not belong to a specific pool instance.
     //It must belong to the thread, independent of how many pool objects exist.
-    static thread_local FreeNode* _localCache;
+    static inline thread_local FreeNode* _localCache;
 
     // Total bytes required for N objects
     static constexpr std::size_t total_bytes() noexcept {
@@ -135,6 +135,8 @@ public:
 };
 
 // Definition of thread-local cache pointer
+/*No need as _localCache is inline 
 template<typename T, std::size_t poolSize>
 thread_local typename LockFreeMemoryPool<T, poolSize>::FreeNode*
     LockFreeMemoryPool<T, poolSize>::_localCache {nullptr};
+*/
