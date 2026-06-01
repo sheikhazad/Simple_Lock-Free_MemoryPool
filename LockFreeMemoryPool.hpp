@@ -106,11 +106,11 @@ public:
         // Slow path: global lock-free free list
         FreeNode* old_head = _freeList.load(std::memory_order_acquire);
         while (old_head) {
-            FreeNode* next = old_head->next;
+            FreeNode* new_head = old_head->next;
 
             // Attempt to pop the old_head using CAS
             if (_freeList.compare_exchange_weak(
-                    old_head, next,
+                    old_head, new_head,
                     std::memory_order_acq_rel,//not memory_order_release because I shud also get what's released by deallocate()(in real scenario)
                     std::memory_order_acquire)) {
 
