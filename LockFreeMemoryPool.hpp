@@ -82,7 +82,13 @@ public:
         // Build the initial free list (simple singly-linked list)
         FreeNode* head = nullptr;
         for (std::size_t i = 0; i < poolSize; ++i) {
-            auto* new_node = reinterpret_cast<FreeNode*>(_buffer + i * sizeof(T));
+            /*T may require alignment greater than 1:
+             * alignof(T) could be 8, 16, 32, etc.
+             * _buffer + i * sizeof(T) does NOT guarantee alignment
+            */
+            //auto* new_node = reinterpret_cast<FreeNode*>(_buffer + i * sizeof(T));
+            std::size_t stride = std::max(sizeof(T), alignof(T));
+            auto* new_node = reinterpret_cast<FreeNode*>(_buffer + i * stride);
             new_node->next = head;
             head = new_node;
         }
