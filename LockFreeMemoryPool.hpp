@@ -104,25 +104,23 @@ public:
         }
 
         // Slow path: global lock-free free list
-        FreeNode* old_head = _freeList.load(std::memory_order_acquire);
-        while (old_head) {
-            FreeNode* new_head = old_head->next;
+        while (true) 
+        {
+           FreeNode* old_head = _freeList.load(std::memory_order_acquire);
+           if (!old_head)
+               return nullptr;
 
-            // Attempt to pop the old_head using CAS
-            /*There is no new acquire load before dereferencing old_head.
-              Therefore:
-             * If the failed CAS uses memory_order_relaxed, then old_head is updated without acquire semantics.
-             * You would then dereference old_head->next without an acquire operation, which is not sufficient if another thread published that node with a release operation.
-             So in current code, memory_order_acquire on failure is the correct choice.*/
-            if (_freeList.compare_exchange_weak(
-                    old_head, new_head,
-                    std::memory_order_acquire,
-                    std::memory_order_acquire)) {
+           FreeNode* new_head = old_head->next;
 
-                return reinterpret_cast<T*>(old_head);
+           if (_freeList.compare_exchange_weak(
+                  old_head,
+                  new_head,
+                  std::memory_order_acquire,
+                  std::memory_order_relaxed)) 
+            {
+              return reinterpret_cast<T*>(old_head);
             }
-        }
-
+         }
         // Pool exhausted
         return nullptr;
     }
