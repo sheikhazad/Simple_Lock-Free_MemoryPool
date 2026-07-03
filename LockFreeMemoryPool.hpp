@@ -53,6 +53,19 @@ class LockFreeMemoryPool {
 
     //round up sizeof(T) to next multiple of alignof(T)
     //i.e. smallest number ≥ sizeof(T) that is a multiple of alignof(T)
+    /* Example:
+       sizeof(T) = 24
+       alignof(T) = 16
+       Step 1: 24 + 16 - 1 = 39
+       Step 2:
+         alignof(T) = 16  -> 10000
+         alignof(T)-1     -> 01111
+         ~(alignof(T)-1)  -> 11110000
+       Step 3:
+         39 in binary = 100111
+         mask         = 11110000
+         result       = 100000 (32)
+     */
     static constexpr std::size_t roundUpToNextAlignofT(){
         return (sizeof(T) + alignof(T) - 1) & 
                 ~(alignof(T) - 1);
