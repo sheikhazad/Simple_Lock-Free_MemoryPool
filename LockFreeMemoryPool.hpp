@@ -111,7 +111,7 @@ public:
             // Attempt to pop the old_head using CAS
             if (_freeList.compare_exchange_weak(
                     old_head, new_head,
-                    std::memory_order_acq_rel,//not memory_order_release because I shud also get what's released by deallocate()(in real scenario)
+                    std::memory_order_acquire,
                     std::memory_order_acquire)) {
 
                 return reinterpret_cast<T*>(old_head);
