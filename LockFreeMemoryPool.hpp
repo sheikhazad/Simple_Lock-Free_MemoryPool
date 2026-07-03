@@ -51,6 +51,11 @@ class LockFreeMemoryPool {
         return poolSize * sizeof(T);
     }
 
+    static constexpr std::size_t roundUpToNextAlignofT(){
+        return (sizeof(T) + alignof(T) - 1) & 
+                ~(alignof(T) - 1);
+    }
+
 public:
     
     LockFreeMemoryPool(const LockFreeMemoryPool&) = delete;
@@ -81,13 +86,13 @@ public:
 
         // Build the initial free list (simple singly-linked list)
         FreeNode* head = nullptr;
+        constexpr std::size_t stride = roundUpToNextAlignofT();
         for (std::size_t i = 0; i < poolSize; ++i) {
             /*T may require alignment greater than 1:
              * alignof(T) could be 8, 16, 32, etc.
              * _buffer + i * sizeof(T) does NOT guarantee alignment
             */
             //auto* new_node = reinterpret_cast<FreeNode*>(_buffer + i * sizeof(T));
-            std::size_t stride = std::max(sizeof(T), alignof(T));
             auto* new_node = reinterpret_cast<FreeNode*>(_buffer + i * stride);
             new_node->next = head;
             head = new_node;
