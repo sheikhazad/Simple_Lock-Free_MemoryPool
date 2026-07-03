@@ -1,9 +1,13 @@
 // LockFreeMemoryPool.cpp
 #include "LockFreeMemoryPool.hpp"
 #include <iostream>  
+#include <iostream>
+#include <thread>
+#include <vector>
+#include <cassert>
 
-// ===================== Example Usage ===================== //
 
+//Test-1
 struct alignas(CACHE_LINE) Order {
     std::uint64_t id;
     double price;
@@ -19,7 +23,96 @@ struct alignas(CACHE_LINE) Order {
     }
 };
 
+//Test-2 & 3:
+struct MyObj {
+    int x;
+    int y;
+};
+
+constexpr std::size_t POOL_SIZE = 1024;
+LockFreeMemoryPool<MyObj, POOL_SIZE> pool;
+
+void single_thread_test() {
+
+    std::vector<MyObj*> ptrs;
+
+    // Allocate all objects
+    for (int i = 0; i < POOL_SIZE; ++i) {
+        auto* p = pool.allocate();
+        assert(p != nullptr);
+        p->x = i;
+        p->y = i * 2;
+        ptrs.push_back(p);
+    }
+
+    // Pool should be exhausted
+    assert(pool.allocate() == nullptr);
+
+    // Free all
+    for (auto* p : ptrs) {
+        pool.deallocate(p);
+    }
+
+    ptrs.clear();
+
+    // Should reuse again
+    for (int i = 0; i < POOL_SIZE; ++i) {
+        auto* p = pool.allocate();
+        assert(p != nullptr);
+        p->x = i;
+    }
+
+    std::cout << "[single_thread_test] OK\n";
+}
+
+void worker(int id, int iterations) {
+
+    std::vector<MyObj*> local;
+
+    for (int i = 0; i < iterations; ++i) {
+
+        auto* p = pool.allocate();
+
+        if (p) {
+            p->x = id;
+            p->y = i;
+            local.push_back(p);
+        }
+
+        // randomly free
+        if (!local.empty() && (i % 3 == 0)) {
+            pool.deallocate(local.back());
+            local.pop_back();
+        }
+    }
+
+    for (auto* p : local) {
+        pool.deallocate(p);
+    }
+}
+
+void multithread_test() {
+
+    constexpr int THREADS = 4;
+    constexpr int ITER = 50'000;
+
+    std::vector<std::thread> threads;
+
+    for (int t = 0; t < THREADS; ++t) {
+        threads.emplace_back(worker, t, ITER);
+    }
+
+    for (auto& th : threads) {
+        th.join();
+    }
+
+    std::cout << "[multithread_test] OK\n";
+}
+
+
+
 int main() {
+    //Test-1
     LockFreeMemoryPool<Order, 4> pool; // Small pool for demonstration
 
     // Allocate a few objects
@@ -61,5 +154,15 @@ int main() {
     o4->~Order(); pool.deallocate(o4);
     o6->~Order(); pool.deallocate(o6);
 
+    //Test-2
+    single_thread_test();
+    //Test-3
+    multithread_test();
+
+    std::cout << "All tests passed\n";
+
     return 0;
 }
+
+
+
