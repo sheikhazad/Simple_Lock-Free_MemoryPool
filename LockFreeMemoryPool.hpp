@@ -112,7 +112,10 @@ public:
             head = new_node;
         }
 
-        _freeList.store(head, std::memory_order_release);
+        //No need for release as :
+        //* no other thread can legally observe _freeList yet
+        //* the object is not “published” to other threads during construction
+        _freeList.store(head, std::memory_order_relaxed);
     }
 
     ~LockFreeMemoryPool() {
