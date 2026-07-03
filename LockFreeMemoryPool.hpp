@@ -40,7 +40,11 @@ class LockFreeMemoryPool {
     //static data members belong to the class, not the object (unlike non-static)
     //A thread‑local cache must not belong to a specific pool instance.
     //It must belong to the thread, independent of how many pool objects exist.
-    static inline thread_local FreeNode* _localCache;
+    static inline thread_local FreeNode* _localCache = nullptr;
+    static inline thread_local std::size_t _localCacheCount = 0;
+
+    static constexpr std::size_t LOCAL_CACHE_LIMIT = 32;
+    static constexpr std::size_t FLUSH_BATCH_SIZE  = 16; 
 
     // Total bytes required for N objects
     static constexpr std::size_t total_bytes() noexcept {
@@ -100,6 +104,7 @@ public:
         if (_localCache) {
             FreeNode* n = _localCache;
             _localCache = n->next;
+            _localCacheCount-- ;
             return reinterpret_cast<T*>(n);
         }
 
@@ -129,13 +134,61 @@ public:
      * Return storage back to the pool.
      * Returned objects go into the thread-local cache first.
      */
-    void deallocate(T* ptr) noexcept {
-        auto* new_node = reinterpret_cast<FreeNode*>(ptr);
-
+    void deallocate(T* ptr) noexcept 
+    {
+        auto* node = reinterpret_cast<FreeNode*>(ptr);
         // Push into thread-local cache (fast path)
-        new_node->next = _localCache;
-        _localCache = new_node;
+        node->next = _localCache;
+        _localCache = node;
+
+        // Flush local cache so that we avoid a particular thread caches all nodes and other threads starve
+        if (++_localCacheCount >= LOCAL_CACHE_LIMIT) {
+            flush_local_cache(); 
+        }
     }
+
+private: 
+    void flush_local_cache() noexcept 
+    {
+
+       if (!_localCache)
+           return;
+
+       // Find batch tail
+       FreeNode* tail = _localCache;
+       std::size_t count = 1;
+
+       while (count < FLUSH_BATCH_SIZE && tail->next) {
+           tail = tail->next;
+           ++count;
+       }
+
+       // If only one node, skip flush
+       if (count == 1)
+           return;
+
+       FreeNode* batch_head = _localCache;
+       FreeNode* remaining  = tail->next;
+
+       _localCache = remaining;
+       _localCacheCount -= count;
+
+    // Push batch to global list
+    while (true) 
+    {
+        FreeNode* old_head = _freeList.load(std::memory_order_relaxed);
+        tail->next = old_head;
+
+        if (_freeList.compare_exchange_weak(
+                old_head,
+                batch_head,
+                std::memory_order_release,
+                std::memory_order_relaxed)) 
+        {
+            break;
+        }
+    }//while()
+  }
 };
 
 // Definition of thread-local cache pointer
