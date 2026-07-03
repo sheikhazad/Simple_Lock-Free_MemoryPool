@@ -29,12 +29,11 @@ class LockFreeMemoryPool {
     // - After publication, it is only read (never modified) by other threads
     // - Synchronization is provided by atomic operations on `_freeList` (CAS with acquire/release)
     struct FreeNode { FreeNode* next; };
+    // Global lock-free free list head (aligned to avoid false sharing)
+    alignas(CACHE_LINE) std::atomic<FreeNode*> _freeList;
 
     // Raw contiguous storage for N objects
     std::byte* _buffer;
-
-    // Global lock-free free list head (aligned to avoid false sharing)
-    alignas(CACHE_LINE) std::atomic<FreeNode*> _freeList;
 
     // Per-thread fast-path cache (no atomics needed)
     //static data members belong to the class, not the object (unlike non-static)
