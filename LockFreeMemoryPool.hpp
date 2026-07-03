@@ -109,6 +109,11 @@ public:
             FreeNode* new_head = old_head->next;
 
             // Attempt to pop the old_head using CAS
+            /*There is no new acquire load before dereferencing old_head.
+              Therefore:
+             * If the failed CAS uses memory_order_relaxed, then old_head is updated without acquire semantics.
+             * You would then dereference old_head->next without an acquire operation, which is not sufficient if another thread published that node with a release operation.
+             So in current code, memory_order_acquire on failure is the correct choice.*/
             if (_freeList.compare_exchange_weak(
                     old_head, new_head,
                     std::memory_order_acquire,
