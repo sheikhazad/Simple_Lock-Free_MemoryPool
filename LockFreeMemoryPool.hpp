@@ -51,6 +51,8 @@ class LockFreeMemoryPool {
         return poolSize * sizeof(T);
     }
 
+    //round up sizeof(T) to next multiple of alignof(T)
+    //i.e. smallest number ≥ sizeof(T) that is a multiple of alignof(T)
     static constexpr std::size_t roundUpToNextAlignofT(){
         return (sizeof(T) + alignof(T) - 1) & 
                 ~(alignof(T) - 1);
