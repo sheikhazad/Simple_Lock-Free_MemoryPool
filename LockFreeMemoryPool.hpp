@@ -33,7 +33,7 @@ class LockFreeMemoryPool {
     alignas(CACHE_LINE) std::atomic<FreeNode*> _freeList;
 
     // Raw contiguous storage for N objects
-    std::byte* _buffer;
+    std::byte* _buffer; //Not T*
 
     // Per-thread fast-path cache (no atomics needed)
     //static data members belong to the class, not the object (unlike non-static)
