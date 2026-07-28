@@ -34,7 +34,7 @@ class LockFreeMemoryPool {
     alignas(CACHE_LINE) std::atomic<FreeNode*> _freeList;
 
     // Raw contiguous storage for N objects
-    std::byte* _buffer; //Not T*
+    std::byte* _byteBuffer; //Not T*
 
     // Per-thread fast-path cache (no atomics needed)
     //static data members belong to the class, not the object (unlike non-static)
@@ -96,8 +96,8 @@ public:
             size += CACHE_LINE - (size % CACHE_LINE);
 
         // Allocate cache-line-aligned storage
-        _buffer = static_cast<std::byte*>(std::aligned_alloc(CACHE_LINE, size));
-        if (!_buffer) throw std::bad_alloc{};
+        _byteBuffer = static_cast<std::byte*>(std::aligned_alloc(CACHE_LINE, size));
+        if (!_byteBuffer) throw std::bad_alloc{};
 
         // Build the initial free list (simple singly-linked list)
         FreeNode* head = nullptr;
@@ -105,10 +105,10 @@ public:
         for (std::size_t i = 0; i < poolSize; ++i) {
             /*T may require alignment greater than 1:
              * alignof(T) could be 8, 16, 32, etc.
-             * _buffer + i * sizeof(T) does NOT guarantee alignment
+             * _byteBuffer + i * sizeof(T) does NOT guarantee alignment
             */
-            //auto* new_node = reinterpret_cast<FreeNode*>(_buffer + i * sizeof(T));
-            auto* new_node = reinterpret_cast<FreeNode*>(_buffer + i * stride);
+            //auto* new_node = reinterpret_cast<FreeNode*>(_byteBuffer + i * sizeof(T));
+            auto* new_node = reinterpret_cast<FreeNode*>(_byteBuffer + i * stride);
             new_node->next = head;
             head = new_node;
         }
@@ -121,7 +121,7 @@ public:
 
     ~LockFreeMemoryPool() {
         //Cant use delte[] as malloc/calloc/aligned_alloc needs free()
-        std::free(_buffer);
+        std::free(_byteBuffer);
     }
 
     /**
