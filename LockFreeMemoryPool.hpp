@@ -46,11 +46,6 @@ class LockFreeMemoryPool {
     static constexpr std::size_t LOCAL_CACHE_LIMIT = 32;
     static constexpr std::size_t FLUSH_BATCH_SIZE  = 16; 
 
-    // Total bytes required for N objects
-    static constexpr std::size_t total_bytes() noexcept {
-        return poolSize * sizeof(T);
-    }
-
     //round up sizeof(T) to next multiple of alignof(T)
     //i.e. smallest number ≥ sizeof(T) that is a multiple of alignof(T)
     /* Example:
@@ -69,6 +64,14 @@ class LockFreeMemoryPool {
     static constexpr std::size_t roundUpToNextAlignofT(){
         return (sizeof(T) + alignof(T) - 1) & 
                 ~(alignof(T) - 1);
+    }
+
+    // Total bytes required for N objects
+    static constexpr std::size_t total_bytes() noexcept {
+        //return poolSize * sizeof(T);
+        //We use actual spacing stride = roundUpToNextAlignofT();
+        //If stride > sizeof(T), we need poolSize * stride not poolSize * sizeof(T)
+        return poolSize * roundUpToNextAlignofT();
     }
 
 public:
@@ -96,7 +99,8 @@ public:
             size += CACHE_LINE - (size % CACHE_LINE);
 
         // Allocate cache-line-aligned storage
-        _byteBuffer = static_cast<std::byte*>(std::aligned_alloc(CACHE_LINE, size));
+        //_byteBuffer = static_cast<std::byte*>(std::aligned_alloc(CACHE_LINE, size));
+          _byteBuffer = static_cast<std::byte*>(::operator new[](size, std::align_val_t{CACHE_LINE}));
         if (!_byteBuffer) throw std::bad_alloc{};
 
         // Build the initial free list (simple singly-linked list)
@@ -121,7 +125,8 @@ public:
 
     ~LockFreeMemoryPool() {
         //Cant use delte[] as malloc/calloc/aligned_alloc needs free()
-        std::free(_byteBuffer);
+        //std::free(_byteBuffer);
+        ::operator delete[]( _byteBuffer, std::align_val_t{CACHE_LINE});
     }
 
     /**
