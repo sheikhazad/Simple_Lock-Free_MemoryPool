@@ -100,8 +100,9 @@ public:
 
         // Allocate cache-line-aligned storage
         //_byteBuffer = static_cast<std::byte*>(std::aligned_alloc(CACHE_LINE, size));
+        //if (!_byteBuffer) throw std::bad_alloc{}; => align_alloc() returns nullptr on allocation failure but ::operator new throw bad_alloc{} already
           _byteBuffer = static_cast<std::byte*>(::operator new[](size, std::align_val_t{CACHE_LINE}));
-        if (!_byteBuffer) throw std::bad_alloc{};
+        
 
         // Build the initial free list (simple singly-linked list)
         FreeNode* head = nullptr;
