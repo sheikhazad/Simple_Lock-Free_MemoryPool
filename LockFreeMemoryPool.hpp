@@ -108,6 +108,8 @@ public:
         //if (!_byteBuffer) throw std::bad_alloc{}; => align_alloc() returns nullptr on allocation failure but 
         //::operator new throw bad_alloc{} already by default [ without std::nothrow ]
         //_byteBuffer = static_cast<std::byte*>(::operator new[](size, std::align_val_t{CACHE_LINE})); //Array allocation is also correct
+
+        //Give me at least 'size' bytes whose starting address is aligned to 64 bytes.
         _byteBuffer = static_cast<std::byte*>(::operator new(size, std::align_val_t{CACHE_LINE}) );
         
 
