@@ -107,7 +107,8 @@ public:
         //_byteBuffer = static_cast<std::byte*>(::operator new[](size, std::align_val_t{CACHE_LINE}, std::nothrow));
         //if (!_byteBuffer) throw std::bad_alloc{}; => align_alloc() returns nullptr on allocation failure but 
         //::operator new throw bad_alloc{} already by default [ without std::nothrow ]
-          _byteBuffer = static_cast<std::byte*>(::operator new[](size, std::align_val_t{CACHE_LINE}));
+        //_byteBuffer = static_cast<std::byte*>(::operator new[](size, std::align_val_t{CACHE_LINE})); //Array allocation is also correct
+        _byteBuffer = static_cast<std::byte*>(::operator new(size, std::align_val_t{CACHE_LINE}) );
         
 
         // Build the initial free list (simple singly-linked list)
@@ -133,7 +134,8 @@ public:
     ~LockFreeMemoryPool() {
         //Cant use delte[] as malloc/calloc/aligned_alloc needs free()
         //std::free(_byteBuffer);
-        ::operator delete[]( _byteBuffer, std::align_val_t{CACHE_LINE});
+        //::operator delete[]( _byteBuffer, std::align_val_t{CACHE_LINE}); //Array allocation is also correct
+        ::operator delete(_byteBuffer, std::align_val_t{CACHE_LINE});
     }
 
     /**
