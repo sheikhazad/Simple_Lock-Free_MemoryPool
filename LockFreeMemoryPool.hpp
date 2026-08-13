@@ -43,7 +43,7 @@ class LockFreeMemoryPool {
     static inline thread_local std::size_t _localCacheCount = 0;
 
     static constexpr std::size_t LOCAL_CACHE_LIMIT = 32;
-    static constexpr std::size_t FLUSH_BATCH_SIZE  = 16; 
+    static constexpr std::size_t BATCH_FLUSH_SIZE  = 16; 
 
     //round up sizeof(T) to next multiple of alignof(T)
     //i.e. smallest number ≥ sizeof(T) that is a multiple of alignof(T)
@@ -196,7 +196,7 @@ private:
        FreeNode* tail = _localCache;
        std::size_t count = 1;
 
-       while (count < FLUSH_BATCH_SIZE && tail->next) {
+       while (count < BATCH_FLUSH_SIZE && tail->next) {
            tail = tail->next;
            ++count;
        }
