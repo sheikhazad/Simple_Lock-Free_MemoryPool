@@ -96,8 +96,11 @@ public:
         256 % 64 = 0
         So 256 is a valid size for aligned_alloc(64, 256)
         */
+        /* aligned_alloc() needs size to be a multiple of alignment.
+           Aligned operator new[] does NOT need size to be a multiple of alignment.
         if (size % CACHE_LINE != 0)
             size += CACHE_LINE - (size % CACHE_LINE);
+        */
 
         // Allocate cache-line-aligned storage
         //_byteBuffer = static_cast<std::byte*>(std::aligned_alloc(CACHE_LINE, size));
