@@ -17,7 +17,6 @@ constexpr std::size_t CACHE_LINE = 64;
  * - Thread-local cache for ultra-fast allocation.
  * - No dynamic fallback: allocation returns nullptr when pool is exhausted.
  */
-//Used here std::aligned_alloc
 template<typename T, std::size_t poolSize>
 class LockFreeMemoryPool {
     
