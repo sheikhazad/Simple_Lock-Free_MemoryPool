@@ -69,8 +69,10 @@ class LockFreeMemoryPool {
     static constexpr std::size_t total_bytes() noexcept {
         //return poolSize * sizeof(T);
         //We use actual spacing stride = roundUpToNextAlignofT();
-        //If stride > sizeof(T), we need poolSize * stride not poolSize * sizeof(T)
-        return poolSize * roundUpToNextAlignofT();
+        //If stride > sizeof(T), we need poolSize * stride 
+        //not poolSize * sizeof(T)
+        constexpr std::size_t stride = roundUpToNextAlignofT();
+        return poolSize * stride;
     }
 
 public:
